@@ -1,5 +1,13 @@
 import numpy as np
 
-data = np.genfromtxt('filtered_set.txt', delimiter='\t', dtype=object, skip_header=1, usecols=range(14), encoding='cp1252')
+# Specify the path to the .npy file
+npy_file_path = "/aspect/ASPECT/data/encoded_seqs.npy"
 
-print('Data shape:', data.shape)
+# Load the .npy file using NumPy
+data = np.load(npy_file_path, allow_pickle=True)
+
+# Retrieve the dimensions of the loaded data
+dimensions = data.shape
+
+# Print the dimensions
+print("Dimensions:", dimensions)
