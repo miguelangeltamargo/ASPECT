@@ -55,8 +55,8 @@ class OnTheFlyEncodingDataset(Dataset):
 
 KMER = 3  # The length of the K-mers to be used by the model and tokenizer
 
-training_data_path = Path("/aspect/ASPECT/data/trainNtest/traindata.csv")
-eval_data_path = Path("/aspect/ASPECT/data/trainNtest/test/testdata.csv")
+training_data_path = Path("/aspect/ASPECT/data/TrVaTe/train_data.csv")
+eval_data_path = Path("/aspect/ASPECT/data/TrVaTe/val_data.csv")
 
 df_training = pd.read_csv(training_data_path)
 
@@ -105,10 +105,7 @@ model, tokenizer, device = load_model(model_config, return_model=True)
 
 SEQ_MAX_LEN = 512  # max len of BERT
 
-BATCH_SIZE = 100  # Set your batch size
-
-print(f"Memory allocated after encoding: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
-print(f"Memory reserved after encoding: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
+BATCH_SIZE = 10  # Set your batch size
 
 train_kmers_list = train_kmers.tolist()
 train_encodings = batch_encode(tokenizer, train_kmers_list, BATCH_SIZE, SEQ_MAX_LEN)
@@ -131,23 +128,23 @@ val_kmers_list = val_kmers.tolist()
 val_encodings = batch_encode(tokenizer, val_kmers_list, BATCH_SIZE, SEQ_MAX_LEN)
 
 val_dataset = OnTheFlyEncodingDataset(val_kmers.tolist(), labels_val, tokenizer, SEQ_MAX_LEN)
+
 ############################################
 #### Training and evaluating the model #####
 ############################################
 
 results_dir = Path("./results/classification/")
 results_dir.mkdir(parents=True, exist_ok=True)
-EPOCHS = 10
-BATCH_SIZE = 2
+EPOCHS = 15
+BATCH_SIZE = 10
 
 # initialize wandb for logging the training process
 wandb.init(project="DNA_bert", name=model_config["model_path"])
 wandb.config.update(model_config)
 
-print(torch.cuda.device_count())
+# print(torch.cuda.device_count())
 
 training_args = TrainingArguments(
-    gradient_accumulation_steps=2,
     output_dir=results_dir / "checkpoints",  # output directory
     num_train_epochs=EPOCHS,
     per_device_train_batch_size=BATCH_SIZE,
@@ -184,7 +181,7 @@ tokenizer.save_pretrained(model_path)
 # evaluate on all the test datasets
 eval_results = []
 for val_dataset in val_dataset_generator(
-    tokenizer, kmer_size=KMER, val_dir="/aspect/ASPECT/data/trainNtest/test/"
+    tokenizer, kmer_size=KMER, val_dir="/aspect/ASPECT/data/TrVaTe/test/"
 ):
     res = trainer.evaluate(val_dataset)
     eval_results.append(res)
