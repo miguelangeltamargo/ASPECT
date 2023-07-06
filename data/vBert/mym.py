@@ -15,11 +15,39 @@
 import wandb
 import pandas as pd
 import numpy as np
+import torch
 from pathlib import Path
 from utils.data_utils import return_kmer, val_dataset_generator, HF_dataset
 from utils.model_utils import load_model, compute_metrics
 from utils.viz_utils import count_plot
 from transformers import Trainer, TrainingArguments
+import pdb
+from torch.utils.data import Dataset
+
+class OnTheFlyEncodingDataset(Dataset):
+    def __init__(self, sequences, labels, tokenizer, max_length):
+        self.sequences = sequences
+        self.labels = labels
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+
+    def __getitem__(self, idx):
+        sequence = self.sequences[idx]
+        label = self.labels[idx]
+        encoding = self.tokenizer.encode_plus(
+            sequence,
+            max_length=self.max_length,
+            padding='max_length',
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors='pt',
+        )
+        encoding['labels'] = torch.tensor([label])
+        return encoding
+
+    def __len__(self):
+        return len(self.sequences)
+
 
 ############################################
 ### Reading the training and test data ####
@@ -27,8 +55,8 @@ from transformers import Trainer, TrainingArguments
 
 KMER = 3  # The length of the K-mers to be used by the model and tokenizer
 
-training_data_path = Path("/aspect/Trainingdata.csv")
-eval_data_path = Path("/aspect/TestData/Testdata-2.csv")
+training_data_path = Path("/aspect/ASPECT/data/trainNtest/traindata.csv")
+eval_data_path = Path("/aspect/ASPECT/data/trainNtest/test/testdata.csv")
 
 df_training = pd.read_csv(training_data_path)
 
@@ -38,6 +66,10 @@ for seq, label in zip(df_training["SEQ"], df_training["CLASS"]):
     train_kmers.append(kmer_seq)
     labels_train.append(label - 1)
 
+# Convert lists to numpy arrays after the loop
+train_kmers = np.array(train_kmers)
+labels_train = np.array(labels_train)
+
 NUM_CLASSES = len(np.unique(labels_train))
 
 count_plot(labels_train, "Training Class Distribution")
@@ -46,23 +78,42 @@ model_config = {
     "model_path": f"zhihan1996/DNA_bert_{KMER}",
     "num_classes": NUM_CLASSES,
 }
+def concatenate_encodings(batch_encodings):
+    return {key: torch.cat([enc[key] for enc in batch_encodings]) for key in batch_encodings[0].keys()}
+
+def batch_encode(tokenizer, texts, batch_size, max_length):
+    batch_start = 0
+    batch_end = batch_size
+    encodings = []
+    while batch_start < len(texts):
+        batch_texts = texts[batch_start:batch_end]
+        batch_encodings = tokenizer.batch_encode_plus(
+            batch_texts,
+            max_length=max_length,
+            padding=True,
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors="pt",
+        )
+        encodings.append(batch_encodings)
+        batch_start += batch_size
+        batch_end += batch_size
+    return encodings
+
 
 model, tokenizer, device = load_model(model_config, return_model=True)
 
 SEQ_MAX_LEN = 512  # max len of BERT
 
-train_encodings = tokenizer.batch_encode_plus(
-    train_kmers,
-    max_length=SEQ_MAX_LEN,
-    padding=True,  # pad to max len
-    truncation=True,  # truncate to max len
-    return_attention_mask=True,
-    return_tensors="pt",  # return pytorch tensors
-)
-train_dataset = HF_dataset(train_encodings["input_ids"], train_encodings["attention_mask"], labels_train
-)
+BATCH_SIZE = 100  # Set your batch size
 
+print(f"Memory allocated after encoding: {torch.cuda.memory_allocated() / 1024 ** 2} MB")
+print(f"Memory reserved after encoding: {torch.cuda.memory_reserved() / 1024 ** 2} MB")
 
+train_kmers_list = train_kmers.tolist()
+train_encodings = batch_encode(tokenizer, train_kmers_list, BATCH_SIZE, SEQ_MAX_LEN)
+
+train_dataset = OnTheFlyEncodingDataset(train_kmers.tolist(), labels_train, tokenizer, SEQ_MAX_LEN)
 df_val = pd.read_csv(eval_data_path)  # i use the Testdata-2 as the validation set
 
 val_kmers, labels_val = [], []
@@ -71,34 +122,32 @@ for seq, label in zip(df_val["SEQ"], df_val["CLASS"]):
     val_kmers.append(kmer_seq)
     labels_val.append(label - 1)
 
+# Convert lists to numpy arrays after the loop
+val_kmers = np.array(val_kmers)
+labels_val = np.array(labels_val)
+
 count_plot(labels_val, "Validation Class Distribution")
+val_kmers_list = val_kmers.tolist()
+val_encodings = batch_encode(tokenizer, val_kmers_list, BATCH_SIZE, SEQ_MAX_LEN)
 
-val_encodings = tokenizer.batch_encode_plus(
-    val_kmers,
-    max_length=SEQ_MAX_LEN,
-    padding=True,  # pad to max len
-    truncation=True,  # truncate to max len
-    return_attention_mask=True,
-    return_tensors="pt",  # return pytorch tensors
-)
-val_dataset = HF_dataset(
-    val_encodings["input_ids"], val_encodings["attention_mask"], labels_val
-)
-
+val_dataset = OnTheFlyEncodingDataset(val_kmers.tolist(), labels_val, tokenizer, SEQ_MAX_LEN)
 ############################################
-### Training and evaluating the model #####
+#### Training and evaluating the model #####
 ############################################
 
 results_dir = Path("./results/classification/")
 results_dir.mkdir(parents=True, exist_ok=True)
-EPOCHS = 15
-BATCH_SIZE = 10
+EPOCHS = 10
+BATCH_SIZE = 2
 
 # initialize wandb for logging the training process
 wandb.init(project="DNA_bert", name=model_config["model_path"])
 wandb.config.update(model_config)
 
+print(torch.cuda.device_count())
+
 training_args = TrainingArguments(
+    gradient_accumulation_steps=2,
     output_dir=results_dir / "checkpoints",  # output directory
     num_train_epochs=EPOCHS,
     per_device_train_batch_size=BATCH_SIZE,
@@ -110,7 +159,6 @@ training_args = TrainingArguments(
     evaluation_strategy="epoch",
     save_strategy="epoch",
 )
-
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -120,8 +168,14 @@ trainer = Trainer(
     tokenizer=tokenizer,
 )
 
-trainer.train()
+torch.cuda.empty_cache()
 
+# print(inputs["input_ids"].shape)
+
+# breakpoint()
+
+trainer.train()
+breakpoint()
 # save the model and tokenizer
 model_path = results_dir / "model"
 model.save_pretrained(model_path)
@@ -130,7 +184,7 @@ tokenizer.save_pretrained(model_path)
 # evaluate on all the test datasets
 eval_results = []
 for val_dataset in val_dataset_generator(
-    tokenizer, kmer_size=KMER, val_dir="/aspect/TestData"
+    tokenizer, kmer_size=KMER, val_dir="/aspect/ASPECT/data/trainNtest/test/"
 ):
     res = trainer.evaluate(val_dataset)
     eval_results.append(res)
