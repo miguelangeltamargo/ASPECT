@@ -93,6 +93,28 @@ def val_dataset_generator(
         yield val_dataset
 
 
+def val_dataset_gene(tokenizer, kmer_size, test_data, maxl_len=512):
+    val_kmers, labels_val = [], []
+
+    for seq, label in zip(test_data["SEQ"], test_data["CLASS"]):
+        kmer_seq = return_kmer(seq, K=kmer_size)
+        val_kmers.append(kmer_seq)
+        labels_val.append(label - 1)
+
+    val_encodings = tokenizer.batch_encode_plus(
+        val_kmers,
+        max_length=maxl_len,
+        pad_to_max_length=True,
+        truncation=True,
+        return_attention_mask=True,
+        return_tensors="pt",
+    )
+    val_dataset = HF_dataset(
+        val_encodings["input_ids"], val_encodings["attention_mask"], labels_val
+    )
+    return val_dataset
+
+
 def return_kmer(seq, K=3):
     """
     This function outputs the K-mers of a DNA sequence
