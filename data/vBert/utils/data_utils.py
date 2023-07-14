@@ -68,7 +68,7 @@ def val_dataset_generator(
     for file in os.listdir(val_dir):
         df_test = pd.read_csv(f"{val_dir}/{file}")
         print(file, len(df_test))
-        val_kmers, labels_val = [], []
+        val_kmers, labels_val = [], [] #validation kmers and validation labels
 
         cls = (
             "CLASS" if "CLASS" in df_test.columns else "Class"
@@ -115,7 +115,7 @@ def val_dataset_gene(tokenizer, kmer_size, test_data, maxl_len=512):
     return val_dataset
 
 
-def return_kmer(seq, K=3):
+def return_kmer(seq, K=6):
     """
     This function outputs the K-mers of a DNA sequence
 

@@ -39,7 +39,7 @@ for seq, label in zip(df_training["SEQ"], df_training["CLASS"]):
     labels_train.append(label - 1)
 
 NUM_CLASSES = len(np.unique(labels_train))
-
+print(NUM_CLASSES)
 count_plot(labels_train, "Training Class Distribution")
 
 model_config = {
@@ -59,11 +59,13 @@ train_encodings = tokenizer.batch_encode_plus(
     return_attention_mask=True,
     return_tensors="pt",  # return pytorch tensors
 )
+
 train_dataset = HF_dataset(train_encodings["input_ids"], train_encodings["attention_mask"], labels_train
 )
+print(train_dataset)
 
 
-df_val = pd.read_csv(eval_data_path)  # i use the Testdata-2 as the validation set
+df_val = pd.read_csv(eval_data_path)  # I use the Testdata-2 as the validation set
 
 val_kmers, labels_val = [], []
 for seq, label in zip(df_val["SEQ"], df_val["CLASS"]):
@@ -72,6 +74,7 @@ for seq, label in zip(df_val["SEQ"], df_val["CLASS"]):
     labels_val.append(label - 1)
 
 count_plot(labels_val, "Validation Class Distribution")
+
 
 val_encodings = tokenizer.batch_encode_plus(
     val_kmers,
@@ -84,6 +87,7 @@ val_encodings = tokenizer.batch_encode_plus(
 val_dataset = HF_dataset(
     val_encodings["input_ids"], val_encodings["attention_mask"], labels_val
 )
+
 
 ############################################
 ### Training and evaluating the model #####
@@ -129,9 +133,7 @@ tokenizer.save_pretrained(model_path)
 
 # evaluate on all the test datasets
 eval_results = []
-for val_dataset in val_dataset_generator(
-    tokenizer, kmer_size=KMER, val_dir="/aspect/TestData"
-):
+for val_dataset in val_dataset_generator(tokenizer, kmer_size=KMER, val_dir="/aspect/TestData"):
     res = trainer.evaluate(val_dataset)
     eval_results.append(res)
 

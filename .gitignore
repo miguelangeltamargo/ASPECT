@@ -369,3 +369,16 @@ data/vBert/utils/__pycache__/model_utils.cpython-310.pyc
 data/vBert/utils/__pycache__/viz_utils.cpython-310.pyc
 .gitignore
 data/vBert/utils/__pycache__/data_utils.cpython-310.pyc
+data/vBert/results
+data/vBert/fold1
+data/vBert/resultsgpt
+data/vBert/wandb
+data/qdata
+data/mdata
+data/vBert/vBert_old/wandb
+data/vBert/vBert_old/results
+data/vBert/vBert_old/utils/__pycache__/data_utils.cpython-310.pyc
+.gitignore
+data/vBert/vBert_old/utils/__pycache__/viz_utils.cpython-310.pyc
+data/vBert/vBert_old/utils/__pycache__/model_utils.cpython-310.pyc
+data/vBert/vBert_old/Validation Class Distribution.png
