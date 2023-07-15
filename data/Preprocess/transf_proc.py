@@ -4,7 +4,7 @@ import csv
 ### Pre processes cassette exons
 
 # Load data from the file
-data = np.genfromtxt('cassette100.txt', delimiter='\t', dtype=object, skip_header=1, usecols=range(15), encoding='cp1252')
+data = np.genfromtxt('../datasets/cassette100f.txt', delimiter='\t', dtype=object, skip_header=1, usecols=range(15), encoding='cp1252')
 
 start_ind = 2  # Index of the start column
 end_ind = 3  # Index of the end column
@@ -39,9 +39,9 @@ for i in range(len(data) - 1):  # Iterate until the second-to-last row
            (start - prev_end) >= 80 and (next_start - end) >= 80:
 
             new_values = [item.decode('cp1252') for item in current_row]
-            new_values[5] = str(start - 70)
+            new_values[5] = str(start - 75)
             new_values[6] = str(end - start)
-            new_values[7] = str(end + 70)
+            new_values[7] = str(end + 75)
             new_values = [new_values[i] for i in column_order]  # Reordering the columns
             filtered_data.append(new_values)
 
@@ -52,7 +52,7 @@ print(filtered_data[20])
 output_file = 'SEQ_ES.csv'
 # Count the total number of rows in the BED file
 total_rows = sum(1 for _ in filtered_data)
-fasta = 'hg38.fa'
+fasta = '../../util/hg38.fa'
 i=1
 
 # Open the output file in write mode

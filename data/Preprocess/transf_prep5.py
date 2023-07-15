@@ -4,7 +4,7 @@ import csv
 ###pre processess Const exons
 
 # Load data from the file
-data = np.genfromtxt("/aspect/ASPECT/data/datasets/5'100.csv", delimiter=',', dtype=object, skip_header=1, usecols=range(14), encoding='cp1252')
+data = np.genfromtxt("../datasets/5'100.csv", delimiter=',', dtype=object, skip_header=1, usecols=range(14), encoding='cp1252')
 
 start_ind = 2  # Index of the start column
 end_ind = 3  # Index of the end column
@@ -21,7 +21,7 @@ for i in range(len(data) - 1):  # Iterate until the second-to-last row
     start = int(current_row[start_ind].decode('cp1252'))  # Access start column of current row
     end = int(current_row[end_ind].decode('cp1252'))  # Access end column of current row
 
-    if count >= 20 and (end - start) >= 25:
+    if count >= 4 and (end - start) >= 25:
         if i + 1 < len(data):
             nSkip = 0
             next_row = data[i + 1]
@@ -36,9 +36,9 @@ for i in range(len(data) - 1):  # Iterate until the second-to-last row
            (start - prev_end) >= 80 and (next_start - end) >= 80:
 
             new_values = [item.decode('cp1252') for item in current_row]
-            new_values[5] = str(start - 70)
+            new_values[5] = str(start - 75)
             new_values[6] = str(end - start)
-            new_values[7] = str(end + 70)
+            new_values[7] = str(end + 75)
             new_values = [new_values[i] for i in column_order]  # Reordering the columns
             filtered_data.append(new_values)
             
@@ -46,7 +46,7 @@ for i in range(len(data) - 1):  # Iterate until the second-to-last row
 output_file = "SEQ_5'.csv"
 # Count the total number of rows in the BED file
 total_rows = sum(1 for _ in filtered_data)
-fasta = '/aspect/ASPECT/data/datasets/hg38.fa'
+fasta = '../../util/hg38.fa'
 i=1
 
 # Open the output file in write mode
