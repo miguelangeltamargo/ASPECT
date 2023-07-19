@@ -383,3 +383,5 @@ data/vBert/vBert_old/utils/__pycache__/viz_utils.cpython-310.pyc
 data/vBert/vBert_old/utils/__pycache__/model_utils.cpython-310.pyc
 data/vBert/vBert_old/Validation Class Distribution.png
 util/hg38.fa
+data/vBert/utils/__pycache__/data_utils.cpython-310.pyc
+data/vBert/utils/__pycache__/model_utils.cpython-310.pyc

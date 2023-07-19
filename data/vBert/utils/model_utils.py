@@ -27,8 +27,15 @@ def load_model(model_config, return_model=False):
     """
 
     global model, device, tokenizer
-
-    if torch.cuda.is_available():
+    fix = False
+    if fix:
+        #FORCES CPU
+        torch.cuda.empty_cache()
+        device = torch.device('cpu')
+        print("Running the model on CPU")
+        #Reset to false after
+        
+    elif torch.cuda.is_available():
         # for CUDA
         torch.cuda.empty_cache()
         device = torch.device("cuda:0")
@@ -41,7 +48,7 @@ def load_model(model_config, return_model=False):
 
     else:
         print("Running the model on CPU")
-
+    
     tokenizer = AutoTokenizer.from_pretrained(
         model_config["model_path"], do_lower_case=False
     )
