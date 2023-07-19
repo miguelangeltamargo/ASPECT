@@ -73,7 +73,7 @@ for train_idx, test_idx in skf.split(                           # Splitting data
         train_labels = [ds_labels[idx] for idx in train_idx]
         test_kmers = [ds_kmer[idx] for idx in test_idx]
         test_labels = [ds_labels[idx] for idx in test_idx]
-
+        count_plot(train_labels, f"Training Class Distribution Fold {count}")
         # Tokenize the two seperate data
         train_encodings = tokenizer.batch_encode_plus(
             train_kmers,
@@ -141,11 +141,12 @@ for train_idx, test_idx in skf.split(                           # Splitting data
         trainer.train()
         breakpoint()
         # save the model and tokenizer
-        model_path = results_dir /"testrun-{runm}"/f"modelfold{count}"
+        model_path = results_dir /f"testrun-{runm}"/f"modelfold{count}"
         model.save_pretrained(model_path)
         tokenizer.save_pretrained(model_path)
         
         # val_dataset_gene(tokenizer, kmer_size=KMER, maxl_len=512)       #dont need to call this here, cause kfolds
+        count_plot(test_labels, f"Testing Class Distribution Fold {count}")
         #Evauating on test data of fold
         res = trainer.evaluate(test_dataset)
         eval_results.append(res)
