@@ -93,8 +93,8 @@ for train_idx, test_idx in skf.split(                           # Splitting data
             return_tensors="pt",  # return pytorch tensors
         )
         # breakpoint()
-        train_dataset = HF_dataset(train_encodings["input_ids"], train_encodings["attention_mask"], train_labels)
-        test_dataset = HF_dataset(test_encodings["input_ids"], test_encodings["attention_mask"], test_labels)
+        train_dataset = HF_dataset(train_encodings["input_ids"], train_encodings["attention_mask"], train_labels)       #worked
+        test_dataset = HF_dataset(test_encodings["input_ids"], test_encodings["attention_mask"], test_labels)           #worked
 
         # train_dataset = dataset(train_encodings["input_ids"], train_encodings["attention_mask"], train_labels, tokenizer)
         # test_dataset = dataset(test_encodings["input_ids"], test_encodings["attention_mask"], test_labels, tokenizer)
@@ -106,20 +106,20 @@ for train_idx, test_idx in skf.split(                           # Splitting data
         ############################################
         
         
-        results_dir = Path("./results/classification/")
+        results_dir = Path("./results/classification/")     #change directory
         results_dir.mkdir(parents=True, exist_ok=True)
         EPOCHS = 10
         BATCH_SIZE = 16
 
         # Set up the Trainer
         training_args = TrainingArguments(
-        output_dir=results_dir / "testrun-{runm}"/ f"fold_{count}",
+        output_dir=results_dir / f"testrun_{runm}"/ f"fold_{count}",
         num_train_epochs=EPOCHS,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
         warmup_steps=500,
         weight_decay=0.01,
-        logging_dir=results_dir / "testrun-{runm}"/ f"fold_{count}" / "logs",
+        logging_dir=results_dir / f"testrun-{runm}"/ f"fold_{count}" / "logs",
         logging_steps=60,
         load_best_model_at_end=True,
 	    evaluation_strategy="epoch",
