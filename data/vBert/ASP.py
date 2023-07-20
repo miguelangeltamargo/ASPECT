@@ -38,9 +38,9 @@ wandb_config = {
 wandb.config.update(wandb_config)
 # breakpoint()
 
-results_dir = "./results"
+results_dir = "./results"/ "ASP"
 file_count = len(os.listdir(results_dir))
-results_dir = Path(f"./results") / f"ASP_run-{file_count}"
+results_dir = Path(f"./results")/ "ASP" / f"ASP_RUN-{file_count}"
 # results_dir = Path(f"./results"/f"ASPrun_{runm}|{file_count}")
         
 sum_acc, sum_f1, eval_results = [], [], []
