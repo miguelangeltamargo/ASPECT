@@ -19,7 +19,7 @@ import os
 
 
 
-KMER = 6
+KMER = 3
 NUM_FOLDS = 5  # Number of folds for stratified k-fold cross-validation
 RANDOM_SEED = 42  # Random seed for reproducibility
 SEQ_MAX_LEN = 512  # max len of BERT
@@ -38,13 +38,14 @@ wandb_config = {
 wandb.config.update(wandb_config)
 # breakpoint()
 
-results_dir = "./results"/ "ASP"
+results_dir = os.path.join(".", "results", "ASP")
+os.makedirs(results_dir, exist_ok=True)
 file_count = len(os.listdir(results_dir))
 results_dir = Path(f"./results")/ "ASP" / f"ASP_RUN-{file_count}"
 # results_dir = Path(f"./results"/f"ASPrun_{runm}|{file_count}")
         
 sum_acc, sum_f1, eval_results = [], [], []
-eval_results = []                                               # List to store evaluation results for each fold
+eval_results = []                                             # List to store evaluation results for each fold
 tr_set = pd.read_csv("../tNt/subset_data.csv")                # Load 20% subset of training data to split
 ds_kmer, ds_labels = [], []
 for seq, label in zip(tr_set["SEQ"], tr_set["CLASS"]):
@@ -65,15 +66,17 @@ model, tokenizer, device = load_model(model_config, return_model=True)
 # breakpoint()
 skf = StratifiedKFold(n_splits=NUM_FOLDS, shuffle = True)       # Setting up skf fold count
 count = 0
-for train_idx, test_idx in skf.split(                           # Splitting data into k-folds
+for train_idx, eval_idx in skf.split(                           # Splitting data into k-folds
     ds_kmer, ds_labels):                                        # to isolate the train and test pairs
         count+=1
         train_kmers = [ds_kmer[idx] for idx in train_idx]
         train_labels = [ds_labels[idx] for idx in train_idx]
-        test_kmers = [ds_kmer[idx] for idx in test_idx]
-        test_labels = [ds_labels[idx] for idx in test_idx]
+        eval_kmers = [ds_kmer[idx] for idx in eval_idx]
+        eval_labels = [ds_labels[idx] for idx in eval_idx]
         
         count_plot(train_labels, f"Training Class Distribution Fold {count}")
+        
+        breakpoint()
         # Tokenize the two seperate data
         train_encodings = tokenizer.batch_encode_plus(
             train_kmers,
@@ -84,8 +87,8 @@ for train_idx, test_idx in skf.split(                           # Splitting data
             return_tensors="pt",  # return pytorch tensors
         )
   
-        test_encodings = tokenizer.batch_encode_plus(
-            test_kmers,
+        eval_encodings = tokenizer.batch_encode_plus(
+            eval_kmers,
             max_length=SEQ_MAX_LEN,
             truncation=True,
             padding=True,
@@ -94,14 +97,14 @@ for train_idx, test_idx in skf.split(                           # Splitting data
         )
         # breakpoint()
         train_dataset = HF_dataset(train_encodings["input_ids"], train_encodings["attention_mask"], train_labels)       #worked
-        test_dataset = HF_dataset(test_encodings["input_ids"], test_encodings["attention_mask"], test_labels)           #worked
+        eval_dataset = HF_dataset(eval_encodings["input_ids"], eval_encodings["attention_mask"], eval_labels)           #worked
 
         # train_dataset = dataset(train_encodings["input_ids"], train_encodings["attention_mask"], train_labels, tokenizer)
         # test_dataset = dataset(test_encodings["input_ids"], test_encodings["attention_mask"], test_labels, tokenizer)
         
         # Create DataLoader for the training dataset
         train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-        eval_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+        eval_dataloader = DataLoader(eval_dataset, batch_size=BATCH_SIZE, shuffle=False)
         # breakpoint()
         
         ############################################
@@ -127,15 +130,24 @@ for train_idx, test_idx in skf.split(                           # Splitting data
         fp16=True,
         gradient_checkpointing=True
         )
-
-        trainer = CustomTrainer(
+        
+        trainer = Trainer(
         model=model,                         # the instantiated 🤗 Transformers model to be trained
         args=training_args,                  # training arguments, defined above
-        train_dataloader=train_dataloader,         # training dataset
-        eval_dataloader=eval_dataloader,           # evaluation dataset
+        train_dataset=train_dataset,         # training dataset
+        eval_dataset=eval_dataset,           # evaluation dataset
         compute_metrics=compute_metrics,     # computing metrics for evaluation in wandb
         tokenizer=tokenizer,
         )
+        
+        # trainer = CustomTrainer(
+        # model=model,                         # the instantiated 🤗 Transformers model to be trained
+        # args=training_args,                  # training arguments, defined above
+        # train_dataloader=train_dataloader,   # training dataset
+        # eval_dataloader=eval_dataloader,     # evaluation dataset
+        # compute_metrics=compute_metrics,     # computing metrics for evaluation in wandb
+        # tokenizer=tokenizer,
+        # )
         
         # Train and evaluate
         trainer.train()
@@ -146,9 +158,9 @@ for train_idx, test_idx in skf.split(                           # Splitting data
         tokenizer.save_pretrained(model_path)
         
         # val_dataset_gene(tokenizer, kmer_size=KMER, maxl_len=512)       #dont need to call this here, cause kfolds
-        count_plot(test_labels, f"Testing Class Distribution Fold {count}")
+        count_plot(eval_labels, f"Evaluation Class Distribution Fold {count}")
         #Evauating on test data of fold
-        res = trainer.evaluate(test_dataset)
+        res = trainer.evaluate(eval_dataset)
         eval_results.append(res)
         
         # average over the eval_accuracy and eval_f1 from the dic items in eval_results

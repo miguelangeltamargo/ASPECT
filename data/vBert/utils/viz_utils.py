@@ -1,11 +1,14 @@
 import numpy as np
+import pandas as pd
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import seaborn as sns
+from collections import Counter
 
 
-def count_plot(y, title):
+
+def count_plot(x, title):
     """
     Plot the class distribution of the data set set
 
@@ -20,8 +23,16 @@ def count_plot(y, title):
     -------
     None
     """
-    sns.countplot(y)
-    plt.title(f'Class dist in {title} set')
+
+    label_counts = Counter(x)
+    label_counts_df = pd.DataFrame.from_dict(label_counts, orient='index').reset_index()
+    label_counts_df.columns = ['Label', 'Count']
+    sns.barplot(x='Label', y='Count', data=label_counts_df, palette='Set1')
+    plt.xlabel('Labels')
+    plt.ylabel('Count')
+    plt.title(f'{title}')
+
+    plt.show()
     plt.savefig(f'{title}.png')
     plt.show()
 
@@ -78,3 +89,4 @@ def plot_pca(X, y, title):
     plt.ylabel('Principal Component 2')
     plt.savefig(f'{title}.png')
     plt.show()
+    
