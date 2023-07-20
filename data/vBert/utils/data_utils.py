@@ -34,9 +34,9 @@ class HF_dataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         return {
-            "input_ids": torch.tensor(self.input_ids[index]),
-            "attention_mask": torch.tensor(self.attention_masks[index]),
-            "labels": torch.tensor(self.labels[index]),
+            "input_ids": self.input_ids[index].clone().detach(),
+            "attention_mask": self.attention_masks[index].clone().detach(),
+            "labels": self.labels[index].clone().detach(),
         }
     
     
