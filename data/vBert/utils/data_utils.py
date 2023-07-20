@@ -1,6 +1,7 @@
 import torch
 import os
 import pandas as pd
+from transformers import Trainer
 
 
 class HF_dataset(torch.utils.data.Dataset):
@@ -37,7 +38,23 @@ class HF_dataset(torch.utils.data.Dataset):
             "attention_mask": torch.tensor(self.attention_masks[index]),
             "labels": torch.tensor(self.labels[index]),
         }
-        
+    
+    
+class CustomTrainer(Trainer):
+    def __init__(self, model, args, train_dataloader, eval_dataloader, **kwargs):
+        super().__init__(model, args, **kwargs)
+        self.train_dataloader = train_dataloader
+        self.eval_dataloader = eval_dataloader
+
+    def get_train_dataloader(self):
+        # Return your training DataLoader
+        return self.train_dataloader
+    
+    def get_eval_dataloader(self):
+        # Return your test DataLoader
+        return self.eval_dataloader
+    
+    
 class dataset(torch.utils.data.Dataset):
     """
     A dataset class for the pre-trained HuggingFace transformers

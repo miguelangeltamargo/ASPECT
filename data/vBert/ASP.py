@@ -3,11 +3,11 @@
 #########################################
 
 
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
+from torch.utils.data import DataLoader
+from transformers import TrainingArguments, Trainer
 from sklearn.model_selection import StratifiedKFold
 from utils.model_utils import load_model, compute_metrics
-from utils.data_utils import return_kmer, val_dataset_gene, HF_dataset, dataset
+from utils.data_utils import return_kmer, CustomTrainer, HF_dataset, dataset
 from utils.viz_utils import count_plot
 from pathlib import Path
 import numpy as np
@@ -23,6 +23,8 @@ KMER = 6
 NUM_FOLDS = 5  # Number of folds for stratified k-fold cross-validation
 RANDOM_SEED = 42  # Random seed for reproducibility
 SEQ_MAX_LEN = 512  # max len of BERT
+EPOCHS = 10
+BATCH_SIZE = 16
 
 #############################################
 ## Initializing variables and reading data ##
@@ -33,13 +35,17 @@ wandb.init(project="DBertFolds", name=f"DNABERT_{KMER}_F{NUM_FOLDS}")
 wandb_config = {
 	"model_path": f"DBertFolds_{KMER}",
 }
-# wandb.config.update(wandb_config)
+wandb.config.update(wandb_config)
+# breakpoint()
 
-# Access the run number
-runm = wandb.run.id
+results_dir = "./results"
+file_count = len(os.listdir(results_dir))
+results_dir = Path(f"./results") / f"ASP_run-{file_count}"
+# results_dir = Path(f"./results"/f"ASPrun_{runm}|{file_count}")
+        
 sum_acc, sum_f1, eval_results = [], [], []
 eval_results = []                                               # List to store evaluation results for each fold
-tr_set = pd.read_csv("../TrVaTe/train_data.csv")                # Load 80% of data to split
+tr_set = pd.read_csv("../tNt/subset_data.csv")                # Load 20% subset of training data to split
 ds_kmer, ds_labels = [], []
 for seq, label in zip(tr_set["SEQ"], tr_set["CLASS"]):
     kmer_seq = return_kmer(seq, K=KMER)                         # Convert sequence to k-mer representation
@@ -49,30 +55,24 @@ for seq, label in zip(tr_set["SEQ"], tr_set["CLASS"]):
 
 # labels = data["CLASS"].values                                 # Isolate the label columns in dataframe
                                                                 # not used as top block does this and more.
-                                                                # # need to implement a more original method
+                                                                # need to implement a more original method
 NUM_CLASSES = len(np.unique(ds_labels))
 model_config = {
     "model_path": f"zhihan1996/DNA_bert_{KMER}",
     "num_classes": NUM_CLASSES,
 }
 model, tokenizer, device = load_model(model_config, return_model=True)
-breakpoint()
+# breakpoint()
 skf = StratifiedKFold(n_splits=NUM_FOLDS, shuffle = True)       # Setting up skf fold count
 count = 0
 for train_idx, test_idx in skf.split(                           # Splitting data into k-folds
-    ds_kmer, ds_labels):                       # to isolate the train and test pairs
-
-# for train_idx, test_idx in skf.split(                           # Splitting data into k-folds
-    # np.zeros(len(ds_labels)), ds_labels):                       # to isolate the train and test pairs
-        # print(train_idx)
+    ds_kmer, ds_labels):                                        # to isolate the train and test pairs
         count+=1
-        # trf_data = tr_set.iloc[train_idx]                       # training fold data of index labels and corresponding seq?
-        # tef_data = tr_set.loc[test_idx]                         # testing fold data of index labels and corresponding seq
-        
         train_kmers = [ds_kmer[idx] for idx in train_idx]
         train_labels = [ds_labels[idx] for idx in train_idx]
         test_kmers = [ds_kmer[idx] for idx in test_idx]
         test_labels = [ds_labels[idx] for idx in test_idx]
+        
         count_plot(train_labels, f"Training Class Distribution Fold {count}")
         # Tokenize the two seperate data
         train_encodings = tokenizer.batch_encode_plus(
@@ -98,7 +98,10 @@ for train_idx, test_idx in skf.split(                           # Splitting data
 
         # train_dataset = dataset(train_encodings["input_ids"], train_encodings["attention_mask"], train_labels, tokenizer)
         # test_dataset = dataset(test_encodings["input_ids"], test_encodings["attention_mask"], test_labels, tokenizer)
-
+        
+        # Create DataLoader for the training dataset
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+        eval_dataloader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
         # breakpoint()
         
         ############################################
@@ -106,20 +109,17 @@ for train_idx, test_idx in skf.split(                           # Splitting data
         ############################################
         
         
-        results_dir = Path("./results/classification/")     #change directory
         results_dir.mkdir(parents=True, exist_ok=True)
-        EPOCHS = 10
-        BATCH_SIZE = 16
 
         # Set up the Trainer
         training_args = TrainingArguments(
-        output_dir=results_dir / f"testrun_{runm}"/ f"fold_{count}",
+        output_dir=results_dir / f"fold_{count}",
         num_train_epochs=EPOCHS,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
         warmup_steps=500,
         weight_decay=0.01,
-        logging_dir=results_dir / f"testrun-{runm}"/ f"fold_{count}" / "logs",
+        logging_dir=results_dir / f"fold_{count}" / "logs",
         logging_steps=60,
         load_best_model_at_end=True,
 	    evaluation_strategy="epoch",
@@ -128,20 +128,20 @@ for train_idx, test_idx in skf.split(                           # Splitting data
         gradient_checkpointing=True
         )
 
-        trainer = Trainer(
+        trainer = CustomTrainer(
         model=model,                         # the instantiated 🤗 Transformers model to be trained
         args=training_args,                  # training arguments, defined above
-        train_dataset=train_dataset,         # training dataset
-        eval_dataset=test_dataset,           # evaluation dataset
+        train_dataloader=train_dataloader,         # training dataset
+        eval_dataloader=eval_dataloader,           # evaluation dataset
         compute_metrics=compute_metrics,     # computing metrics for evaluation in wandb
         tokenizer=tokenizer,
         )
         
         # Train and evaluate
         trainer.train()
-        breakpoint()
+        # breakpoint()
         # save the model and tokenizer
-        model_path = results_dir /f"testrun-{runm}"/f"modelfold{count}"
+        model_path = results_dir / f"modelfold{count}"
         model.save_pretrained(model_path)
         tokenizer.save_pretrained(model_path)
         
