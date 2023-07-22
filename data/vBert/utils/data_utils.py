@@ -36,8 +36,9 @@ class HF_dataset(torch.utils.data.Dataset):
         return {
             "input_ids": self.input_ids[index].clone().detach(),
             "attention_mask": self.attention_masks[index].clone().detach(),
-            "labels": self.labels[index].clone().detach(),
+            "labels": torch.tensor(self.labels[index]).clone().detach(),
         }
+
     
     
 class CustomTrainer(Trainer):

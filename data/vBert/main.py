@@ -27,7 +27,7 @@ from transformers import Trainer, TrainingArguments
 
 KMER = 3  # The length of the K-mers to be used by the model and tokenizer
 
-training_data_path = Path("/aspect/Trainingdata.csv")
+training_data_path = Path("../tNt/subset_data.csv")
 eval_data_path = Path("/aspect/TestData/Testdata-2.csv")
 
 df_training = pd.read_csv(training_data_path)
