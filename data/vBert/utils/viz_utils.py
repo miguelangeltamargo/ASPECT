@@ -5,10 +5,11 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import seaborn as sns
 from collections import Counter
+import os
 
 
 
-def count_plot(x, title):
+def count_plot(x, title, dir):
     """
     Plot the class distribution of the data set set
 
@@ -31,9 +32,10 @@ def count_plot(x, title):
     plt.xlabel('Labels')
     plt.ylabel('Count')
     plt.title(f'{title}')
-
-    plt.show()
-    plt.savefig(f'{title}.png')
+    pathf = dir / 'graphs'
+    os.makedirs(pathf, exist_ok=True)
+    filename = f'{title}.png'
+    plt.savefig(os.path.join(pathf, filename) )
     plt.show()
 
 def plot_tsne(X, y, title):
