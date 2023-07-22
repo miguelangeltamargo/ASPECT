@@ -2,10 +2,10 @@
 ### Importing the necessary libraries ###
 #########################################
 
-
+import torch
 from torch.utils.data import DataLoader
 from transformers import TrainingArguments, Trainer
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from utils.model_utils import load_model, compute_metrics
 from utils.data_utils import return_kmer, CustomTrainer, HF_dataset, dataset
 from utils.viz_utils import count_plot
@@ -17,9 +17,9 @@ import pdb
 import os
 # os.environ["TORCH_USE_CUDA_DSA"] = "1"
 
+# torch.cuda.set_max_split_size(1024)
 
-
-KMER = 3
+KMER = 6
 NUM_FOLDS = 5  # Number of folds for stratified k-fold cross-validation
 RANDOM_SEED = 42  # Random seed for reproducibility
 SEQ_MAX_LEN = 512  # max len of BERT
@@ -43,16 +43,30 @@ os.makedirs(results_dir, exist_ok=True)
 file_count = len(os.listdir(results_dir))
 results_dir = Path(f"./results")/ "ASP" / f"ASP_RUN-{file_count}"
 # results_dir = Path(f"./results"/f"ASPrun_{runm}|{file_count}")
-        
-sum_acc, sum_f1, eval_results = [], [], []
-eval_results = []                                             # List to store evaluation results for each fold
-tr_set = pd.read_csv("../tNt/subset_data.csv")                # Load 20% subset of training data to split
-ds_kmer, ds_labels = [], []
-for seq, label in zip(tr_set["SEQ"], tr_set["CLASS"]):
-    kmer_seq = return_kmer(seq, K=KMER)                         # Convert sequence to k-mer representation
-    ds_kmer.append(kmer_seq)                                    # Append k-mer sequence to training data
-    ds_labels.append(label - 1)                                 # Adjust label indexing
 
+f1_flog, acc_flog = {}, {}
+sum_acc, sum_f1, eval_results = [], [], []                                   # List to store evaluation results for each fold
+tr_set = pd.read_csv("../tNt/subset_data.csv")                # Load 20% subset of training data to split
+
+
+# Split the data into 30% for testing and 70% for training, maintaining the same label distribution
+train_set, test_set = train_test_split(tr_set, test_size=0.99, stratify=tr_set["CLASS"], random_state=42)
+
+ds_kmer, ds_labels = [], []
+for seq, label in zip(train_set["SEQ"], train_set["CLASS"]):
+    kmer_seq = return_kmer(seq, K=KMER)          # Convert sequence to k-mer representation
+    ds_kmer.append(kmer_seq)                     # Append k-mer sequence to training data
+    ds_labels.append(label - 1)                  # Adjust label indexing
+
+
+# ds_kmer, ds_labels = [], []
+# for seq, label in zip(tr_set["SEQ"], tr_set["CLASS"]):
+#     kmer_seq = return_kmer(seq, K=KMER)                         # Convert sequence to k-mer representation
+#     ds_kmer.append(kmer_seq)                                    # Append k-mer sequence to training data
+#     ds_labels.append(label - 1)                                 # Adjust label indexing
+
+df_kmers = np.array(ds_kmer)
+df_labels = np.array(ds_labels)
 
 # labels = data["CLASS"].values                                 # Isolate the label columns in dataframe
                                                                 # not used as top block does this and more.
@@ -66,20 +80,32 @@ model, tokenizer, device = load_model(model_config, return_model=True)
 # breakpoint()
 skf = StratifiedKFold(n_splits=NUM_FOLDS, shuffle = True)       # Setting up skf fold count
 count = 0
+# for train_idx, eval_idx in skf.split(                           # Splitting data into k-folds
+#     ds_kmer, ds_labels):                                        # to isolate the train and test pairs
+#         count+=1
+#         train_kmers = [ds_kmer[idx] for idx in train_idx]
+#         train_labels = [ds_labels[idx] for idx in train_idx]
+#         eval_kmers = [ds_kmer[idx] for idx in eval_idx]
+#         eval_labels = [ds_labels[idx] for idx in eval_idx]
+
 for train_idx, eval_idx in skf.split(                           # Splitting data into k-folds
-    ds_kmer, ds_labels):                                        # to isolate the train and test pairs
+    df_kmers, df_labels):                                        # to isolate the train and test pairs
         count+=1
-        train_kmers = [ds_kmer[idx] for idx in train_idx]
-        train_labels = [ds_labels[idx] for idx in train_idx]
-        eval_kmers = [ds_kmer[idx] for idx in eval_idx]
-        eval_labels = [ds_labels[idx] for idx in eval_idx]
+        # print("Train:",train_idx,'Test:',eval_idx)
+        train_kmers, eval_kmers = [df_kmers[train_idx], df_kmers[eval_idx]]
+        train_labels, eval_labels = [df_labels[train_idx], df_labels[eval_idx]]
         
-        count_plot(train_labels, f"Training Class Distribution Fold {count}")
+        count_plot(train_labels, f"Training Class Distribution Fold {count}", results_dir)
         
-        breakpoint()
+        # breakpoint()
+        # train_kmers = train_kmers.tolist()
+        train_labels = train_labels.tolist()
+        eval_kmers = eval_kmers.tolist()
+        eval_labels = eval_labels.tolist()
+                
         # Tokenize the two seperate data
         train_encodings = tokenizer.batch_encode_plus(
-            train_kmers,
+            train_kmers.tolist(),
             max_length=SEQ_MAX_LEN,
             truncation=True,
             padding=True,
@@ -158,7 +184,7 @@ for train_idx, eval_idx in skf.split(                           # Splitting data
         tokenizer.save_pretrained(model_path)
         
         # val_dataset_gene(tokenizer, kmer_size=KMER, maxl_len=512)       #dont need to call this here, cause kfolds
-        count_plot(eval_labels, f"Evaluation Class Distribution Fold {count}")
+        count_plot(eval_labels, f"Evaluation Class Distribution Fold {count}", results_dir)
         #Evauating on test data of fold
         res = trainer.evaluate(eval_dataset)
         eval_results.append(res)
@@ -166,7 +192,14 @@ for train_idx, eval_idx in skf.split(                           # Splitting data
         # average over the eval_accuracy and eval_f1 from the dic items in eval_results
         fold_acc = np.mean([res["eval_accuracy"] for res in eval_results])
         fold_f1 = np.mean([res["eval_f1"] for res in eval_results])
-    
+        
+        wandb.log({
+        f"Fold {count} Acc" : fold_acc,
+        f"Fold {count} F1" : fold_f1
+        })
+        acc_flog[f"Fold {count}"] = fold_acc
+        f1_flog[f"Fold {count}"] = fold_f1
+        
         # Update the sums and count
         # Append the averages to the respective lists
         sum_acc.append(fold_acc)
@@ -182,6 +215,13 @@ avg_f1 = np.mean(sum_f1)
 
 print(f"Average accuracy: {avg_acc}")
 print(f"Average F1: {avg_f1}")
- 
+print("\nsum_acc:", sum_acc)
+print("\nsum_f1:", sum_f1)
+
+# Log the lists
+# wandb.log({"fold_acc": sum_acc, "fold_f1": sum_f1})
 wandb.log({"avg_acc": avg_acc, "avg_f1": avg_f1})
 wandb.finish()
+
+print("\nDict Acc of Folds:", acc_flog)
+print("\nDict F1 of Folds:", f1_flog)
