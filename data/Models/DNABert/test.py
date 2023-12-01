@@ -1,3 +1,7 @@
+########################################################
+# This script produces a plot of the data distribution #
+########################################################
+
 import pandas as pd
 from pathlib import Path
 from utils.data_utils import return_kmer, val_dataset_generator, HF_dataset
