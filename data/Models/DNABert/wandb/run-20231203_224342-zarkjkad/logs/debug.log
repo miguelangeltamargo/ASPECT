@@ -1,0 +1,28 @@
+2023-12-03 22:43:42,803 INFO    MainThread:3664 [wandb_setup.py:_flush():76] Current SDK version is 0.16.0
+2023-12-03 22:43:42,803 INFO    MainThread:3664 [wandb_setup.py:_flush():76] Configure stats pid to 3664
+2023-12-03 22:43:42,803 INFO    MainThread:3664 [wandb_setup.py:_flush():76] Loading settings from /root/.config/wandb/settings
+2023-12-03 22:43:42,803 INFO    MainThread:3664 [wandb_setup.py:_flush():76] Loading settings from /home/data/Models/DNABert/wandb/settings
+2023-12-03 22:43:42,803 INFO    MainThread:3664 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-12-03 22:43:42,803 INFO    MainThread:3664 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-12-03 22:43:42,803 INFO    MainThread:3664 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'ASP.py', 'program_abspath': '/home/data/Models/DNABert/ASP.py', 'program': '/home/data/Models/DNABert/ASP.py'}
+2023-12-03 22:43:42,803 INFO    MainThread:3664 [wandb_init.py:_log_setup():524] Logging user logs to /home/data/Models/DNABert/wandb/run-20231203_224342-zarkjkad/logs/debug.log
+2023-12-03 22:43:42,804 INFO    MainThread:3664 [wandb_init.py:_log_setup():525] Logging internal logs to /home/data/Models/DNABert/wandb/run-20231203_224342-zarkjkad/logs/debug-internal.log
+2023-12-03 22:43:42,804 INFO    MainThread:3664 [wandb_init.py:init():564] calling init triggers
+2023-12-03 22:43:42,804 INFO    MainThread:3664 [wandb_init.py:init():571] wandb.init called with sweep_config: {}
+config: {}
+2023-12-03 22:43:42,804 INFO    MainThread:3664 [wandb_init.py:init():614] starting backend
+2023-12-03 22:43:42,804 INFO    MainThread:3664 [wandb_init.py:init():618] setting up manager
+2023-12-03 22:43:42,811 INFO    MainThread:3664 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2023-12-03 22:43:42,814 INFO    MainThread:3664 [wandb_init.py:init():624] backend started and connected
+2023-12-03 22:43:42,829 INFO    MainThread:3664 [wandb_init.py:init():716] updated telemetry
+2023-12-03 22:43:42,834 INFO    MainThread:3664 [wandb_init.py:init():749] communicating run to backend with 90.0 second timeout
+2023-12-03 22:43:43,901 INFO    MainThread:3664 [wandb_run.py:_on_init():2254] communicating current version
+2023-12-03 22:43:44,113 INFO    MainThread:3664 [wandb_run.py:_on_init():2263] got version response 
+2023-12-03 22:43:44,113 INFO    MainThread:3664 [wandb_init.py:init():800] starting run threads in backend
+2023-12-03 22:43:44,217 INFO    MainThread:3664 [wandb_run.py:_console_start():2233] atexit reg
+2023-12-03 22:43:44,217 INFO    MainThread:3664 [wandb_run.py:_redirect():2088] redirect: wrap_raw
+2023-12-03 22:43:44,218 INFO    MainThread:3664 [wandb_run.py:_redirect():2153] Wrapping output streams.
+2023-12-03 22:43:44,218 INFO    MainThread:3664 [wandb_run.py:_redirect():2178] Redirects installed.
+2023-12-03 22:43:44,219 INFO    MainThread:3664 [wandb_init.py:init():841] run started, returning control to user process
+2023-12-03 22:43:44,220 INFO    MainThread:3664 [wandb_run.py:_config_callback():1342] config_cb None None {'model_path': 'ASPECT_6'}
+2023-12-03 22:43:52,277 WARNING MsgRouterThr:3664 [router.py:message_loop():77] message_loop has been closed

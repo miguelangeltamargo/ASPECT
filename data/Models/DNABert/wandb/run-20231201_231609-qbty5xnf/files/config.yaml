@@ -1,0 +1,44 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    python_version: 3.10.6
+    cli_version: 0.15.4
+    framework: huggingface
+    huggingface_version: 4.30.2
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1701472569.821654
+    t:
+      1:
+      - 1
+      - 2
+      - 3
+      - 5
+      - 11
+      - 49
+      - 53
+      - 55
+      - 71
+      2:
+      - 1
+      - 2
+      - 3
+      - 5
+      - 11
+      - 49
+      - 53
+      - 55
+      - 71
+      3:
+      - 13
+      - 23
+      4: 3.10.6
+      5: 0.15.4
+      6: 4.30.2
+      8:
+      - 5
+model_path:
+  desc: null
+  value: DBertFolds_6
