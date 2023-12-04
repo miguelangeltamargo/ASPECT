@@ -31,9 +31,9 @@ BATCH_SIZE = 16
 #############################################
 
 # Initialize wandb
-wandb.init(project="DBertFolds", name=f"DNABERT_{KMER}_F{NUM_FOLDS}")
+wandb.init(entity='mtamargo', project="ASPECT", name=f"DNABERT_{KMER}_F{NUM_FOLDS}")
 wandb_config = {
-	"model_path": f"DBertFolds_{KMER}",
+	"model_path": f"ASPECT_{KMER}",
 }
 wandb.config.update(wandb_config)
 # breakpoint()
@@ -46,7 +46,7 @@ results_dir = Path(f"./results")/ "ASP" / f"ASP_RUN-{file_count}"
 
 f1_flog, acc_flog = {}, {}
 sum_acc, sum_f1, eval_results = [], [], []                                   # List to store evaluation results for each fold
-tr_set = pd.read_csv("../tNt/subset_data.csv")                # Load 20% subset of training data to split
+tr_set = pd.read_csv("../../tNt/subset_data.csv")                # Load 20% subset of training data to split
 
 
 # Split the data into 30% for testing and 70% for training, maintaining the same label distribution

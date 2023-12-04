@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/home/data/Models/DNABert/ASP.py", line 49, in <module>
+    tr_set = pd.read_csv("../tNt/subset_data.csv")                # Load 20% subset of training data to split
+  File "/usr/local/lib/python3.10/dist-packages/pandas/io/parsers/readers.py", line 912, in read_csv
+    return _read(filepath_or_buffer, kwds)
+  File "/usr/local/lib/python3.10/dist-packages/pandas/io/parsers/readers.py", line 577, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/usr/local/lib/python3.10/dist-packages/pandas/io/parsers/readers.py", line 1407, in __init__
+    self._engine = self._make_engine(f, self.engine)
+  File "/usr/local/lib/python3.10/dist-packages/pandas/io/parsers/readers.py", line 1661, in _make_engine
+    self.handles = get_handle(
+  File "/usr/local/lib/python3.10/dist-packages/pandas/io/common.py", line 859, in get_handle
+    handle = open(
+FileNotFoundError: [Errno 2] No such file or directory: '../tNt/subset_data.csv'
