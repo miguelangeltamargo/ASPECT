@@ -227,3 +227,5 @@ data/vBert/vBert_old/Validation Class Distribution.png
 util/hg38.fa
 data/vBert/utils/__pycache__
 /util
+data/Models/DNABert/results/ASP/ASP_RUN-0/graphs/Training Class Distribution Fold 1.png
+data/Models/DNABert/results/
