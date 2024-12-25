@@ -31,7 +31,7 @@ BATCH_SIZE = 16
 #############################################
 
 # Initialize wandb
-wandb.init(entity='mtamargo', project="ASPECT", name=f"DNABERT_{KMER}_F{NUM_FOLDS}")
+wandb.init(entity='mtamargo', project="ASPECT2024", name=f"DNABERT_{KMER}_F{NUM_FOLDS}")
 wandb_config = {
 	"model_path": f"ASPECT_{KMER}",
 }

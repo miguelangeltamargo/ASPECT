@@ -1,0 +1,63 @@
+# Use a clean Ubuntu image with CUDA for the final container
+FROM nvidia/cuda:11.8.0-base-ubuntu20.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND noninteractive
+ENV TERM xterm
+ENV LC_ALL C.UTF-8
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    zsh \
+    software-properties-common \
+    gcc \
+    git \
+    python3 \
+    python3-distutils \
+    python3-pip \
+    python3-apt \
+    nano \
+    bedtools \
+    screen \
+    curl \
+    sudo
+    
+# Add a non-root user and give it sudo privileges
+RUN useradd -m docker && echo "docker:docker" | chpasswd && adduser docker sudo
+
+# Switch to the new user
+USER docker
+
+# Install Oh My Zsh
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+# Install Powerlevel10k
+RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel10k
+
+# Set Powerlevel10k as the theme in the .zshrc file
+RUN sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="powerlevel10k/powerlevel10k"/g' ~/.zshrc
+
+# Add repository
+RUN add-apt-repository -y ppa:deadsnakes/ppa
+
+# Install Python packages
+RUN pip3 install \
+    pandas \
+    numpy \
+    tensorflow \
+    torch \
+    keras \
+    scikit-learn \
+    pybedtools \
+    wandb \
+    transformers \
+    seaborn
+    
+# Set an alias for Python
+RUN echo "alias python='python3'" >> ~/.bashrc
+
+# Expose port 8888
+EXPOSE 8888
+
+# Set the working directory
+# WORKDIR /aspect/ASPECT
