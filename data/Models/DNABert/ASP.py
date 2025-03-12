@@ -20,11 +20,11 @@ import os
 # torch.cuda.set_max_split_size(1024)
 
 KMER = 6
-NUM_FOLDS = 5  # Number of folds for stratified k-fold cross-validation
+NUM_FOLDS = 10  # Number of folds for stratified k-fold cross-validation
 RANDOM_SEED = 42  # Random seed for reproducibility
 SEQ_MAX_LEN = 512  # max len of BERT
-EPOCHS = 10
-BATCH_SIZE = 16
+EPOCHS = 15
+BATCH_SIZE = 32
 
 #############################################
 ## Initializing variables and reading data ##
@@ -45,8 +45,9 @@ results_dir = Path(f"./results")/ "ASP" / f"ASP_RUN-{file_count}"
 # results_dir = Path(f"./results"/f"ASPrun_{runm}|{file_count}")
 
 f1_flog, acc_flog = {}, {}
-sum_acc, sum_f1, eval_results = [], [], []                                   # List to store evaluation results for each fold
-tr_set = pd.read_csv("../../tNt/subset_data.csv")                # Load 20% subset of training data to split
+sum_acc, sum_f1, eval_results = [], [], []                       # List to store evaluation results for each fold
+# tr_set = pd.read_csv("../../tNt/subset_data.csv")                # Load 20% subset of training data to split
+tr_set = pd.read_csv("../../datasets/sahil/Cassette_Const_data.csv")                # Load 20% subset of training data to split
 
 
 # Split the data into 30% for testing and 70% for training, maintaining the same label distribution
@@ -88,7 +89,7 @@ count = 0
 #         eval_kmers = [ds_kmer[idx] for idx in eval_idx]
 #         eval_labels = [ds_labels[idx] for idx in eval_idx]
 
-for train_idx, eval_idx in skf.split(                           # Splitting data into k-folds
+for train_idx, eval_idx in skf.split(                            # Splitting data into k-folds
     df_kmers, df_labels):                                        # to isolate the train and test pairs
         count+=1
         # print("Train:",train_idx,'Test:',eval_idx)
@@ -177,7 +178,6 @@ for train_idx, eval_idx in skf.split(                           # Splitting data
         
         # Train and evaluate
         trainer.train()
-        # breakpoint()
         # save the model and tokenizer
         model_path = results_dir / f"modelfold{count}"
         model.save_pretrained(model_path)

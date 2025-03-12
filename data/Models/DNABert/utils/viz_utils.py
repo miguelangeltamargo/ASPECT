@@ -6,7 +6,7 @@ from sklearn.decomposition import PCA
 import seaborn as sns
 from collections import Counter
 import os
-
+from sklearn.metrics import precision_recall_fscore_support, confusion_matrix, ConfusionMatrixDisplay
 
 
 def count_plot(x, title, dir):
@@ -28,7 +28,7 @@ def count_plot(x, title, dir):
     label_counts = Counter(x)
     label_counts_df = pd.DataFrame.from_dict(label_counts, orient='index').reset_index()
     label_counts_df.columns = ['Label', 'Count']
-    sns.barplot(x='Label', y='Count', data=label_counts_df, palette='Set1')
+    sns.barplot(x='Label', y='Count', hue='Label', data=label_counts_df, palette='Set1', legend=False)
     plt.xlabel('Labels')
     plt.ylabel('Count')
     plt.title(f'{title}')
@@ -92,3 +92,25 @@ def plot_pca(X, y, title):
     plt.savefig(f'{title}.png')
     plt.show()
     
+
+# Define function to plot confusion matrix
+def plot_confusion_matrix(trainer, eval_dataset, results_dir, dataset):
+    predictions, labels, _ = trainer.predict(eval_dataset)
+    preds = np.argmax(predictions, axis=-1)
+    cm = confusion_matrix(labels, preds)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Constitutive", "Cassette"])
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title(f"Confusion Matrix {dataset}")
+    plt.savefig(results_dir / f"confusion_matrix_{dataset}.png")
+    plt.close()
+    
+    # Define function to plot confusion matrix FOR NO FOLDS ONLY TRIALS
+def plot_trial_confusion_matrix(trainer, eval_dataset, trial, results_dir):
+    predictions, labels, _ = trainer.predict(eval_dataset)
+    preds = np.argmax(predictions, axis=-1)
+    cm = confusion_matrix(labels, preds)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Constitutive", "Cassette"])
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title(f"Confusion Matrix Trial {trial}")
+    plt.savefig(results_dir / f"confusion_matrix_Trial_{trial}.png")
+    plt.close()

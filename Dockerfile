@@ -69,6 +69,7 @@ RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTO
 
 # Set Python alias
 RUN echo "alias python='python3'" >> ~/.bashrc
+RUN echo "alias python='python3'" >> ~/.zshrc
 
 # Expose port 8888
 EXPOSE 8888
